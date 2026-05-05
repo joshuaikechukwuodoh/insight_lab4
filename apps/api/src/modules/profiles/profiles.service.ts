@@ -1,0 +1,100 @@
+import { Prisma } from '@prisma/client';
+import { v7 as uuidv7 } from 'uuid';
+import { prisma } from '../../config/prisma';
+
+export interface ProfileFilters {
+  gender?: string;
+  age_group?: string;
+  country_id?: string;
+  min_age?: number;
+  max_age?: number;
+  min_gender_probability?: number;
+  min_country_probability?: number;
+  sort_by?: 'age' | 'created_at' | 'gender_probability';
+  order?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+const buildWhere = (filters: ProfileFilters): Prisma.ProfileWhereInput => {
+  const where: Prisma.ProfileWhereInput = {};
+  if (filters.gender) where.gender = filters.gender;
+  if (filters.age_group) where.age_group = filters.age_group;
+  if (filters.country_id) where.country_id = filters.country_id;
+  if (filters.min_age !== undefined || filters.max_age !== undefined) {
+    where.age = { gte: filters.min_age, lte: filters.max_age };
+  }
+  if (filters.min_gender_probability !== undefined) {
+    where.gender_probability = { gte: filters.min_gender_probability };
+  }
+  if (filters.min_country_probability !== undefined) {
+    where.country_probability = { gte: filters.min_country_probability };
+  }
+  return where;
+};
+
+export const listProfiles = async (filters: ProfileFilters) => {
+  const sort_by = filters.sort_by ?? 'created_at';
+  const order = filters.order ?? 'desc';
+  const page = filters.page ?? 1;
+  const limit = filters.limit ?? 20;
+
+  const where = buildWhere(filters);
+  const skip = (page - 1) * limit;
+
+  const [data, total] = await Promise.all([
+    prisma.profile.findMany({
+      where,
+      orderBy: { [sort_by]: order },
+      skip,
+      take: limit,
+    }),
+    prisma.profile.count({ where }),
+  ]);
+
+  return { data, page, limit, total };
+};
+
+export const streamProfilesForExport = async (filters: ProfileFilters) => {
+  const sort_by = filters.sort_by ?? 'created_at';
+  const order = filters.order ?? 'desc';
+  return prisma.profile.findMany({
+    where: buildWhere(filters),
+    orderBy: { [sort_by]: order },
+  });
+};
+
+export const getProfileById = async (id: string) => {
+  return prisma.profile.findUnique({ where: { id } });
+};
+
+export interface CreateProfileInput {
+  name: string;
+  gender: string;
+  gender_probability: number;
+  age: number;
+  age_group: string;
+  country_id: string;
+  country_name: string;
+  country_probability: number;
+}
+
+export const createProfile = async (input: CreateProfileInput) => {
+  return prisma.profile.create({
+    data: { id: uuidv7(), ...input },
+  });
+};
+
+export const updateProfile = async (
+  id: string,
+  patch: Partial<CreateProfileInput>
+) => {
+  return prisma.profile.update({
+    where: { id },
+    data: patch,
+  });
+};
+
+export const deleteProfile = async (id: string) => {
+  return prisma.profile.delete({ where: { id } });
+};

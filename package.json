@@ -1,0 +1,24 @@
+{
+  "name": "insighta-labs-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "bun --cwd apps/web dev",
+    "build:web": "bun --cwd apps/web build",
+    "start:web": "bun --cwd apps/web start",
+
+    "dev:api": "bun --cwd apps/api dev",
+    "build:api": "bun --cwd apps/api build",
+    "start:api": "bun --cwd apps/api start",
+
+    "dev:cli": "bun --cwd apps/cli dev",
+    "build:cli": "bun --cwd apps/cli build",
+    "start:cli": "bun --cwd apps/cli start",
+
+    "typecheck": "bun --cwd apps/api build && bun --cwd apps/cli build && bun --cwd apps/web build"
+  }
+}
+
